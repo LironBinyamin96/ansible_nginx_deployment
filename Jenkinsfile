@@ -45,7 +45,7 @@ pipeline {
                     // Execute the playbook directly on the remote server
                     sh """
                         # Copy the playbook to the remote server
-                        scp -o StrictHostKeyChecking=no -i ~/.ssh_temp/ssh_key.pem playbook-Nginx.yml ${VM_USER}@${VM_HOST}:~/playbook-Nginx.yml
+                        scp -o StrictHostKeyChecking=no -i ~/.ssh_temp/ssh_key.pem nginx.yml ${VM_USER}@${VM_HOST}:~/playbook-Nginx.yml
                         
                         # Ensure Ansible is installed on the remote server
                         ssh -o StrictHostKeyChecking=no -i ~/.ssh_temp/ssh_key.pem ${VM_USER}@${VM_HOST} '
@@ -60,7 +60,7 @@ pipeline {
                             echo "localhost ansible_connection=local" >> ~/inventory
                             
                             # Run the playbook
-                            ansible-playbook -i ~/inventory ~/playbook-Nginx.yml
+                            ansible-playbook -i ~/inventory ~/nginx.yml
                         '
                     """
                 }
