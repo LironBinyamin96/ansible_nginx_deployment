@@ -55,7 +55,7 @@ pipeline {
                                 sudo apt-get install -y ansible
                             fi
 
-                            ansible-galaxy install nginx
+                            ansible-galaxy install nginx --ignore-errors
                             
                             # Create a simple localhost inventory file
                             echo "[webserver]" > ~/inventory
