@@ -39,32 +39,57 @@ pipeline {
             }
         }
         
+        stage('Install Ansible') {
+            steps {
+                script {
+                    // Ensure Ansible and ansible-galaxy are installed on the Jenkins host
+                    sh '''
+                        if ! command -v ansible-playbook &> /dev/null; then
+                            echo "Installing Ansible on Jenkins host..."
+                            apt-get update || true
+                            apt-get install -y ansible || true
+                        fi
+                        
+                        # Check if ansible-galaxy is available
+                        if ! command -v ansible-galaxy &> /dev/null; then
+                            echo "ansible-galaxy not found. Ansible installation may be incomplete."
+                            exit 1
+                        fi
+                    '''
+                }
+            }
+        }
+        
+        stage('Create Ansible Inventory') {
+            steps {
+                script {
+                    // Create inventory file for Ansible to target the remote server
+                    sh '''
+                        mkdir -p ansible
+                        echo "[webserver]" > ansible/inventory
+                        echo "${VM_HOST} ansible_user=${VM_USER} ansible_ssh_private_key_file=~/.ssh_temp/ssh_key.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> ansible/inventory
+                        cat ansible/inventory
+                    '''
+                }
+            }
+        }
+        
         stage('Run Ansible Playbook') {
             steps {
                 script {
-                    // Execute the playbook directly on the remote server
-                    sh """
-                        # Copy the playbook to the remote server
-                        scp -o StrictHostKeyChecking=no -i ~/.ssh_temp/ssh_key.pem nginx.yml ${VM_USER}@${VM_HOST}:~/nginx.yml
-                        
-                        # Ensure Ansible is installed on the remote server
-                        ssh -o StrictHostKeyChecking=no -i ~/.ssh_temp/ssh_key.pem ${VM_USER}@${VM_HOST} '
-                            if ! command -v ansible-playbook &> /dev/null; then
-                                echo "Installing Ansible on the remote server..."
-                                sudo apt-get update
-                                sudo apt-get install -y ansible
-                            fi
-
-                            ansible-galaxy install nginx --ignore-errors
-                            
-                            # Create a simple localhost inventory file
-                            echo "[webserver]" > ~/inventory
-                            echo "localhost ansible_connection=local" >> ~/inventory
-                            
-                            # Run the playbook
-                            ansible-playbook -i ~/inventory ~/nginx.yml
-                        '
-                    """
+                    // Run ansible-galaxy to install required roles
+                    sh '''
+                        cd ansible
+                        # Install required roles from requirements file if it exists
+                        if [ -f "requirements.yml" ]; then
+                            ansible-galaxy install -r requirements.yml
+                        fi
+                    '''
+                    
+                    // Execute the playbook from the Jenkins host targeting the remote VM
+                    sh '''
+                        ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook -i ansible/inventory nginx.yml -v
+                    '''
                 }
             }
         }
@@ -82,6 +107,7 @@ pipeline {
         always {
             // Ensure credentials are always cleaned up, even if the pipeline fails
             sh 'rm -rf ~/.ssh_temp || true'
+            sh 'rm -rf ansible || true'
         }
     }
 }
