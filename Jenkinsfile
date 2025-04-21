@@ -2,7 +2,7 @@ pipeline {
     agent any
     environment {
         VAULT_TOKEN = credentials('vault-token-secret-text')
-        VM_HOST = '51.84.63.158'
+        VM_HOST = 'Liron.aws.cts.care'
         VM_USER = 'ubuntu'
     }
     stages {
