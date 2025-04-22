@@ -39,31 +39,37 @@ pipeline {
             }
         }
         
+       stage('Install Ansible') {
+            steps {
+                // Install ansible on Jenkins agent if not already installed
+                sh '''
+                    if ! command -v ansible-playbook &> /dev/null; then
+                        echo "Installing Ansible on Jenkins agent..."
+                        sudo apt-get update
+                        sudo apt-get install -y ansible
+                    fi
+                '''
+            }
+        }
+        
+        stage('Prepare Inventory') {
+            steps {
+                // Create inventory file for the target VM
+                sh '''
+                    echo "[webserver]" > inventory
+                    echo "${VM_HOST} ansible_user=${VM_USER} ansible_ssh_private_key_file=~/.ssh_temp/ssh_key.pem ansible_ssh_common_args='-o StrictHostKeyChecking=no'" >> inventory
+                    cat inventory
+                '''
+            }
+        }
+        
         stage('Run Ansible Playbook') {
             steps {
-                script {
-                    // Execute the playbook directly on the remote server
-                    sh """
-                        # Copy the playbook to the remote server
-                        scp -o StrictHostKeyChecking=no -i ~/.ssh_temp/ssh_key.pem nginx.yml ${VM_USER}@${VM_HOST}:~/nginx.yml
-                        
-                        # Ensure Ansible is installed on the remote server
-                        ssh -o StrictHostKeyChecking=no -i ~/.ssh_temp/ssh_key.pem ${VM_USER}@${VM_HOST} '
-                            if ! command -v ansible-playbook &> /dev/null; then
-                                echo "Installing Ansible on the remote server..."
-                                sudo apt-get update
-                                sudo apt-get install -y ansible
-                            fi
-
-                            # Create a simple localhost inventory file
-                            echo "[webserver]" > ~/inventory
-                            echo "localhost ansible_connection=local" >> ~/inventory
-                            
-                            # Run the playbook
-                            ansible-playbook -i ~/inventory ~/nginx.yml
-                        '
-                    """
-                }
+                // Run ansible playbook from Jenkins against the remote VM
+                sh '''
+                    export ANSIBLE_HOST_KEY_CHECKING=False
+                    ansible-playbook -i inventory playbook-Nginx.yml -v
+                '''
             }
         }
         
