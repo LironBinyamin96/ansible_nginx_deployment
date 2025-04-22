@@ -40,7 +40,6 @@ pipeline {
                 // Install ansible on Jenkins agent if not already installed
                 sh '''
                     if ! command -v ansible-playbook &> /dev/null; then
-                        echo "Installing Ansible on Jenkins agent..."
                         sudo apt-get update
                         sudo apt-get install -y ansible
                     fi
