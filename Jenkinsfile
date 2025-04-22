@@ -64,7 +64,7 @@ pipeline {
                 // Run ansible playbook from Jenkins against the remote VM
                 sh '''
                     export ANSIBLE_HOST_KEY_CHECKING=False
-                    ansible-playbook -i inventory playbook-Nginx.yml -v
+                    ansible-playbook -i inventory nginx.yml -v
                 '''
             }
         }
