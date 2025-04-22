@@ -1,3 +1,6 @@
 collections:
 - name: community.general
 - name: ansible.posix
+
+roles:
+  - src: telusdigital.apt-repository
