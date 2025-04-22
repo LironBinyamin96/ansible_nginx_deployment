@@ -17,14 +17,10 @@ pipeline {
                         sh '''
                             # Get response from Vault 
                             RESPONSE=$(curl --silent --header "X-Vault-Token: $VAULT_TOKEN" --request GET http://vault:8200/v1/secret/aws/privat-key)
-                            
-                            # Extract the private key using basic shell commands
+                
+                            # Extract the private key
                             echo "$RESPONSE" | sed 's/.*"value":"//' | sed 's/".*//' > ~/.ssh_temp/ssh_key.pem
-                            
-                            # Fix newlines (replace \\n with actual newlines)
                             sed -i 's/\\\\n/\\n/g' ~/.ssh_temp/ssh_key.pem
-                            
-                            # Set correct permissions
                             chmod 600 ~/.ssh_temp/ssh_key.pem
                         '''
                     }
