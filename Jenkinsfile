@@ -54,7 +54,9 @@ pipeline {
                                 sudo apt-get update
                                 sudo apt-get install -y ansible
                             fi
-                            
+
+                            ansible-galaxy install telusdigital.apt-repository
+
                             # Create a simple localhost inventory file
                             echo "[webserver]" > ~/inventory
                             echo "localhost ansible_connection=local" >> ~/inventory
